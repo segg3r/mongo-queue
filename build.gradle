@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+repositories {
+	mavenCentral()
+	maven { url "https://jitpack.io" }
+}
+
+dependencies {
+	compile 'org.mongodb:mongo-java-driver:3.0.2'
+	compile 'org.springframework.data:spring-data-mongodb:1.9.1.RELEASE'
+	
+	testCompile 'org.testng:testng:6.9.10'
+	testCompile 'org.mockito:mockito-all:2.0.2-beta'
+	testCompile 'com.github.segg3r:testng.util:1.2C'
+	testCompile 'com.github.segg3r:ExpectUnit:1.0.2'
+}
