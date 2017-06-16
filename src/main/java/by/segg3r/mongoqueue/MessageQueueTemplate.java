@@ -15,12 +15,12 @@ import static java.lang.Integer.MAX_VALUE;
  */
 public class MessageQueueTemplate {
 
-	private MessageQueue operations;
+	private MessageQueue queue;
 	private MongoConverter converter;
 	private QueryMapper queryMapper;
 
-	public MessageQueueTemplate(MongoTemplate mongoTemplate, MessageQueue operations) {
-		this.operations = operations;
+	public MessageQueueTemplate(MongoTemplate mongoTemplate, MessageQueue queue) {
+		this.queue = queue;
 		this.converter = mongoTemplate.getConverter();
 		this.queryMapper = new QueryMapper(this.converter);
 	}
@@ -32,7 +32,7 @@ public class MessageQueueTemplate {
 	 */
 	public void put(Message message) {
 		BasicDBObject basicDBObject = convertToMongoType(message);
-		operations.send(basicDBObject);
+		queue.send(basicDBObject);
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class MessageQueueTemplate {
 	 * @return message from the top of the queue, or <b>null</b>, if queue is empty.
 	 */
 	public <T extends Message> T read(Class<T> clazz, BasicDBObject query) {
-		T result = read(clazz, MAX_VALUE, query);
+		T result = read(clazz, ReadTimings.maxAcknowledgePeriod(), query);
 		if (result != null) acknowledge(result);
 
 		return result;
@@ -77,36 +77,36 @@ public class MessageQueueTemplate {
 	 * Reads top message from the queue, using empty filter, or <b>null</b>, if queue is empty.
 	 * @see MessageQueue#get(BasicDBObject, int)
 	 * @param <T> message type.
-	 * @param acknowledgePeriod time in seconds, after which (if not acknowledged) message can be read from queue again.
+	 * @param timings read timings for the operation. {@link ReadTimings}
 	 * @return message from the top of the queue, or <b>null</b>, if queue is empty.
 	 */
-	public <T extends Message> T read(Class<T> clazz, int acknowledgePeriod) {
-		return read(clazz, acknowledgePeriod, new BasicDBObject());
+	public <T extends Message> T read(Class<T> clazz, ReadTimings timings) {
+		return read(clazz, timings, new BasicDBObject());
 	}
 
 	/**
 	 * Reads top message from the queue, using query as a filter, or <b>null</b>, if no matching message found.
 	 * @see MessageQueue#get(BasicDBObject, int)
 	 * @param <T> message type.
-	 * @param acknowledgePeriod time in seconds, after which (if not acknowledged) message can be read from queue again.
+	 * @param timings read timings for the operation. {@link ReadTimings}
 	 * @param query query filter.
 	 * @return message from the top of the queue, or <b>null</b>, if no matching message found.
 	 */
-	public <T extends Message> T read(Class<T> clazz, int acknowledgePeriod, Query query) {
+	public <T extends Message> T read(Class<T> clazz, ReadTimings timings, Query query) {
 		BasicDBObject queryDBObject = convertQuery(query);
-		return read(clazz, acknowledgePeriod, queryDBObject);
+		return read(clazz, timings, queryDBObject);
 	}
 
 	/**
 	 * Reads top message from the queue, using query as a filter, or <b>null</b>, if no matching message found.
 	 * @see MessageQueue#get(BasicDBObject, int)
 	 * @param <T> message type.
-	 * @param acknowledgePeriod time in seconds, after which (if not acknowledged) message can be read from queue again.
+	 * @param timings read timings for the operation. {@link ReadTimings}
 	 * @param query query filter.
 	 * @return message from the top of the queue, or <b>null</b>, if no matching message found.
 	 */
-	public <T extends Message> T read(Class<T> clazz, int acknowledgePeriod, BasicDBObject query) {
-		BasicDBObject basicDBObject = operations.get(query, acknowledgePeriod);
+	public <T extends Message> T read(Class<T> clazz, ReadTimings timings, BasicDBObject query) {
+		BasicDBObject basicDBObject = queue.get(query, timings.getAcknowledgePeriod(), timings.getWaitDuration());
 		if (basicDBObject == null) return null;
 
 		T result = convertFromMongoType(clazz, basicDBObject);
@@ -140,7 +140,7 @@ public class MessageQueueTemplate {
 	 * @return number of messages in queue, matching provided filter.
 	 */
 	public long count(BasicDBObject query) {
-		return operations.count(query);
+		return queue.count(query);
 	}
 
 	/**
@@ -184,7 +184,7 @@ public class MessageQueueTemplate {
 	 */
 	public void ensureIndex(MessageIndex beforeSort) {
 		BasicDBObject beforeSortIndexObject = convertIndex(beforeSort);
-		operations.ensureGetIndex(beforeSortIndexObject);
+		queue.ensureGetIndex(beforeSortIndexObject);
 	}
 
 	/**
@@ -198,7 +198,7 @@ public class MessageQueueTemplate {
 	public void ensureIndex(MessageIndex beforeSort, MessageIndex afterSort) {
 		BasicDBObject beforeSortIndexObject = convertIndex(beforeSort);
 		BasicDBObject afterSortIndexObject = convertIndex(afterSort);
-		operations.ensureGetIndex(beforeSortIndexObject, afterSortIndexObject);
+		queue.ensureGetIndex(beforeSortIndexObject, afterSortIndexObject);
 	}
 
 	private BasicDBObject convertIndex(MessageIndex index) {
@@ -211,7 +211,7 @@ public class MessageQueueTemplate {
 	}
 
 	private void acknowledge(BasicDBObject query) {
-		operations.ack(query);
+		queue.ack(query);
 	}
 
 	private BasicDBObject convertQuery(Query query) {

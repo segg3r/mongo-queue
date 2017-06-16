@@ -17,8 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static by.segg3r.expectunit.Expect.expect;
 import static by.segg3r.mongoqueue.MessageIndex.byMessageId;
+import static by.segg3r.mongoqueue.ReadTimings.defaultTimings;
+import static by.segg3r.mongoqueue.ReadTimings.maxAcknowledgePeriod;
 import static java.lang.Boolean.TRUE;
-import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.parseInt;
 import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
@@ -47,7 +48,7 @@ public class MessageQueueTemplateTest {
 		SimpleMessage expectedMessage = new SimpleMessage("pavel", "dzunovich");
 		template.put(expectedMessage);
 
-		SimpleMessage actualMessage = template.read(SimpleMessage.class, 1);
+		SimpleMessage actualMessage = template.read(SimpleMessage.class, defaultTimings().withAcknowledgePeriod(1));
 		expect(actualMessage.getKey()).toEqual("pavel");
 		expect(actualMessage.getValue()).toEqual("dzunovich");
 		expect(actualMessage.getId()).not().toBeNull();
@@ -68,28 +69,28 @@ public class MessageQueueTemplateTest {
 	public void testAckReadTwiceFails() {
 		template.put(new SimpleMessage("pavel", "dzunovich"));
 
-		expect(template.read(SimpleMessage.class, MAX_VALUE)).not().toBeNull();
-		expect(template.read(SimpleMessage.class, MAX_VALUE)).toBeNull();
+		expect(template.read(SimpleMessage.class, maxAcknowledgePeriod())).not().toBeNull();
+		expect(template.read(SimpleMessage.class, maxAcknowledgePeriod())).toBeNull();
 	}
 
 	@Test(description = "should read same message twice if it was not ack in given time")
 	public void testAckReadTwice() throws Exception {
 		template.put(new SimpleMessage("pavel", "dzunovich"));
 
-		expect(template.read(SimpleMessage.class, 1)).not().toBeNull();
+		expect(template.read(SimpleMessage.class, defaultTimings().withAcknowledgePeriod(1))).not().toBeNull();
 		sleep(1000);
-		expect(template.read(SimpleMessage.class, 1)).not().toBeNull();
+		expect(template.read(SimpleMessage.class, defaultTimings().withAcknowledgePeriod(1))).not().toBeNull();
 	}
 
 	@Test(description = "should not read same message twice if it was ack in given time")
 	public void testAckGivenTime() throws Exception {
 		template.put(new SimpleMessage("pavel", "dzunovich"));
 
-		SimpleMessage actualMessage = template.read(SimpleMessage.class, 1);
+		SimpleMessage actualMessage = template.read(SimpleMessage.class, defaultTimings().withAcknowledgePeriod(1));
 		expect(actualMessage).not().toBeNull();
 		template.acknowledge(actualMessage);
 		sleep(1000);
-		expect(template.read(SimpleMessage.class, Integer.MAX_VALUE)).toBeNull();
+		expect(template.read(SimpleMessage.class, maxAcknowledgePeriod())).toBeNull();
 	}
 
 	@Test(description = "should not read same message twice if it was ack in given time (immediately)")
@@ -121,7 +122,7 @@ public class MessageQueueTemplateTest {
 					MessageQueue threadMessageQueue = new MessageQueue(collection);
 					MessageQueueTemplate threadTemplate = new MessageQueueTemplate(mongoTemplate, threadMessageQueue);
 
-					SimpleMessage actualThreadMessage = threadTemplate.read(SimpleMessage.class, 1);
+					SimpleMessage actualThreadMessage = threadTemplate.read(SimpleMessage.class, defaultTimings().withAcknowledgePeriod(1));
 
 					if (actualThreadMessage == null) {
 						System.out.println(currentThread() + " finished.");
