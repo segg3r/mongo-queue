@@ -7,8 +7,6 @@ import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.convert.QueryMapper;
 import org.springframework.data.mongodb.core.query.Query;
 
-import static java.lang.Integer.MAX_VALUE;
-
 /**
  * Wrapper upon {@link MessageQueue}. Provides typed access to the queue collection.
  * Created by Pavel_Dzunovich on 6/16/2017.
@@ -19,8 +17,8 @@ public class MessageQueueTemplate {
 	private MongoConverter converter;
 	private QueryMapper queryMapper;
 
-	public MessageQueueTemplate(MongoTemplate mongoTemplate, MessageQueue queue) {
-		this.queue = queue;
+	public MessageQueueTemplate(MongoTemplate mongoTemplate, String name) {
+		this.queue = new MessageQueue(mongoTemplate.getDb().getCollection(name));
 		this.converter = mongoTemplate.getConverter();
 		this.queryMapper = new QueryMapper(this.converter);
 	}

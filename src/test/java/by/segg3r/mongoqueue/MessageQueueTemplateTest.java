@@ -38,9 +38,7 @@ public class MessageQueueTemplateTest {
 
 	@BeforeClass
 	public void initTest() {
-		DBCollection collection = mongoFactory.getDb().getCollection("queue");
-		MessageQueue messageQueueOperations = new MessageQueue(collection);
-		template = new MessageQueueTemplate(mongoTemplate, messageQueueOperations);
+		template = new MessageQueueTemplate(mongoTemplate, "queue");
 	}
 
 	@Test(description = "should read typed message")
@@ -118,9 +116,7 @@ public class MessageQueueTemplateTest {
 		for (int i = 0; i < threadsCount; i++) {
 			Thread thread = new Thread(() -> {
 				while (true) {
-					DBCollection collection = mongoFactory.getDb().getCollection("queue");
-					MessageQueue threadMessageQueue = new MessageQueue(collection);
-					MessageQueueTemplate threadTemplate = new MessageQueueTemplate(mongoTemplate, threadMessageQueue);
+					MessageQueueTemplate threadTemplate = new MessageQueueTemplate(mongoTemplate, "queue");
 
 					SimpleMessage actualThreadMessage = threadTemplate.read(SimpleMessage.class, defaultTimings().withAcknowledgePeriod(1));
 
