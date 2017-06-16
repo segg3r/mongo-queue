@@ -1,6 +1,6 @@
 package by.segg3r.mongoqueue;
 
-public class SimpleMessage {
+public class SimpleMessage extends Message {
 
 	private String key;
 	private String value;
@@ -25,6 +25,5 @@ public class SimpleMessage {
 	public void setValue(String value) {
 		this.value = value;
 	}
-
 
 }

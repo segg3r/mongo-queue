@@ -10,11 +10,14 @@ import java.util.Objects;
 import java.util.UUID;
 import org.bson.types.ObjectId;
 
-public final class Queue {
+/**
+ * Direct rip-off from https://github.com/gaillard/mongo-queue-java. Thank you very much!
+ */
+public final class MessageQueue {
 
 	private final DBCollection collection;
 
-	public Queue(final DBCollection collection) {
+	public MessageQueue(final DBCollection collection) {
 		Objects.requireNonNull(collection);
 
 		this.collection = collection;
@@ -231,7 +234,7 @@ public final class Queue {
 	public void ack(final BasicDBObject message) {
 		Objects.requireNonNull(message);
 		final Object id = message.get("id");
-		if (id.getClass() != ObjectId.class) {
+		if (id == null || !id.getClass().equals(ObjectId.class)) {
 			throw new IllegalArgumentException("id must be an ObjectId");
 		}
 
