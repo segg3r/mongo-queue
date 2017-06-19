@@ -52,6 +52,15 @@ public class MessageQueueTemplateTest {
 		expect(actualMessage.getId()).not().toBeNull();
 	}
 
+	@Test(description = "should read child message")
+	public void testReadChildTypeMessage() throws Exception {
+		ChildMessage childMessage = new ChildMessage();
+		childMessage.setValue(10);
+		template.put(childMessage);
+
+		expect(((ChildMessage) template.read(BaseMessage.class)).getValue()).toBe(10);
+	}
+
 	@Test(description = "should count number of messages")
 	public void testReadCount() {
 		template.put(new SimpleMessage("pavel", "dzunovich"));

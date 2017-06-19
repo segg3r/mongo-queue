@@ -221,7 +221,10 @@ public class MessageQueueTemplate {
 	}
 
 	private <T> BasicDBObject convertToMongoType(T message) {
-		return (BasicDBObject) converter.convertToMongoType(message);
+		BasicDBObject basicDBObject = (BasicDBObject) converter.convertToMongoType(message);
+		basicDBObject.put("_class", message.getClass().getName());
+
+		return basicDBObject;
 	}
 
 }
